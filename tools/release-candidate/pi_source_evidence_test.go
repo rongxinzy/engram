@@ -81,7 +81,7 @@ func main(){
 	mutatedCore := commit()
 	candidateWrite(t, repo, "tools/agent-contract/main.go", strings.ReplaceAll(owner, "MUTATION", `if os.WriteFile(os.Args[2],[]byte("changed"),0600)!=nil{os.Exit(5)}`))
 	mutatedCapture := commit()
-	invoke := func(coreID, piID string, extra ...string) (map[string]any, string, int) {
+	invoke := func(t *testing.T, coreID, piID string, extra ...string) (map[string]any, string, int) {
 		t.Helper()
 		before := candidateSnapshot(t, repo)
 		args := []string{"-root", repo, "-observe-contract", "-core-ref", "refs/tags/v3.0.0", "-pi-ref", "refs/tags/pi-v0.5.0", "-core-source", coreID, "-pi-source", piID}
@@ -97,9 +97,7 @@ func main(){
 				t.Fatal(err)
 			}
 		}
-		if !reflect.DeepEqual(before, candidateSnapshot(t, repo)) {
-			t.Fatal("changed original sources, dependency cache or Git state")
-		}
+		assertCandidateSnapshotUnchanged(t, repo, before, candidateSnapshot(t, repo))
 		var report map[string]any
 		if out.Len() != 0 {
 			if err := json.Unmarshal(out.Bytes(), &report); err != nil {
@@ -109,13 +107,13 @@ func main(){
 		return report, diagnostic.String(), code
 	}
 	t.Run("old source mode stays opt-in free", func(t *testing.T) {
-		r, stderr, code := invoke(core, pi)
+		r, stderr, code := invoke(t, core, pi)
 		if code != 2 || stderr != "" || r["piInputs"] != nil || r["check"].(map[string]any)["state"] != "passed" || len(r) != 5 {
 			t.Fatalf("legacy observation changed: %v %q %d", r, stderr, code)
 		}
 	})
 	t.Run("missing fixed dependency cannot establish Pi proof", func(t *testing.T) {
-		r, stderr, code := invoke(core, pi, "-observe-pi-inputs")
+		r, stderr, code := invoke(t, core, pi, "-observe-pi-inputs")
 		if code != 2 || stderr != "" || r["outcome"] != "blocked" || r["piInputs"] == nil {
 			t.Fatalf("missing dependency: %v %q %d", r, stderr, code)
 		}
@@ -125,7 +123,7 @@ func main(){
 		}
 	})
 	t.Run("new flag rejected before IO without source mode", func(t *testing.T) {
-		r, stderr, code := invoke(core, pi, "-observe-pi-inputs", "-observe-contract=false", "-root", filepath.Join(repo, "absent"))
+		r, stderr, code := invoke(t, core, pi, "-observe-pi-inputs", "-observe-contract=false", "-root", filepath.Join(repo, "absent"))
 		if code != 1 || stderr != "-observe-pi-inputs requires -observe-contract\n" || r != nil {
 			t.Fatalf("invocation: %v %q %d", r, stderr, code)
 		}
@@ -155,7 +153,7 @@ func main(){
 		} {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Setenv("NODE_OPTIONS", "--not-a-real-node-option") // Ambient hooks must not replace selected-source execution.
-				r, stderr, code := invoke(tc.core, tc.pi, "-observe-pi-inputs")
+				r, stderr, code := invoke(t, tc.core, tc.pi, "-observe-pi-inputs")
 				if code != 2 || stderr != "" || r["outcome"] != "blocked" || r["schemaVersion"] != float64(1) || r["piInputs"] == nil {
 					t.Fatalf("nonapproving observation: %v %q %d", r, stderr, code)
 				}
@@ -170,8 +168,8 @@ func main(){
 			})
 		}
 		t.Run("explicit false preserves old observation", func(t *testing.T) {
-			a, se, code := invoke(core, pi)
-			b, be, bc := invoke(core, pi, "-observe-pi-inputs=false")
+			a, se, code := invoke(t, core, pi)
+			b, be, bc := invoke(t, core, pi, "-observe-pi-inputs=false")
 			if code != 2 || bc != 2 || se != "" || be != "" || !reflect.DeepEqual(a, b) {
 				t.Fatalf("false changed legacy: %v %v %q %q %d %d", a, b, se, be, code, bc)
 			}
