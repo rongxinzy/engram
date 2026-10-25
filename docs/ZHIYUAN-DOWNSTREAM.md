@@ -22,6 +22,13 @@ percent escapes, whitespace and control characters remain invalid. There is no
 all-project fallback, stored-owner rewrite, enrollment change or auth change.
 The application's own current-owner authorization remains required.
 
+ID-addressed mutations retain upstream's required `expected_project` query
+assertion. The application supplies its durable local owner, including during
+replacement and in-flight withdrawal cleanup; it does not fetch an observation
+to fill in a missing assertion. Missing assertions return 400, a different owner
+returns 409, and missing authentication remains 401. A successful read must not
+be used as authority to mutate a different owner's numeric observation ID.
+
 The initial regression suite exercises actual HTTP writes/search/recent for two
 companions, personal memory and an ordinary workspace, plus invalid and unknown
 identifiers. The same tests fail on the unchanged upstream main. This small
@@ -39,3 +46,20 @@ pinned runtime. A local build is not a release. Multi-platform archives and
 checksums must come from the same reviewed source revision, and a downstream
 binary must report its downstream version. Existing application integrity and
 platform acceptance checks continue to apply.
+
+## Verification commands
+
+```sh
+go test -mod=readonly ./internal/project ./internal/server -run 'Test(ResolveZhiYuan|HTTPZhiYuan)' -count=1
+TMPDIR=/private/tmp go test -mod=readonly ./internal/project ./internal/server ./internal/store
+TMPDIR=/private/tmp go test -mod=readonly -tags e2e ./internal/server/...
+```
+
+The explicit macOS temporary root avoids unrelated stock fixtures comparing
+`/var` paths with their `/private/var` canonical forms. It does not skip tests or
+change production path behavior. Record stock full-suite failures separately;
+passing these package commands is not a claim that the entire upstream suite,
+platform matrix or hosted CI passed. Application acceptance additionally checks
+an offline copy of a closed old runtime database: preserve four owners' exact
+observation IDs/content, keep deleted records hidden, and retain wrong-owner
+mutation rejection after upgrade. It never upgrades a real user's database.
