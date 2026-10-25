@@ -37,6 +37,13 @@ func TestPiPackageSourceEvidence(t *testing.T) {
 		return strings.TrimSpace(string(out))
 	}
 	git("init", "--quiet")
+	// Finish fixture maintenance before taking complete byte snapshots.
+	git("config", "maintenance.auto", "true")
+	git("config", "maintenance.autoDetach", "false")
+	git("config", "gc.autoDetach", "false")
+	// Force the maintenance boundary even for this small synthetic history.
+	git("config", "maintenance.commit-graph.enabled", "true")
+	git("config", "maintenance.commit-graph.auto", "1")
 	git("config", "user.name", "Package Fixture")
 	git("config", "user.email", "fixture@example.invalid")
 	git("config", "commit.gpgsign", "false")

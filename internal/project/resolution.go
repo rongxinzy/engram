@@ -111,7 +111,7 @@ func normalizeProjectName(name string) (string, error) {
 	if trimmed == "" {
 		return "", invalidProjectName(name, "project is required")
 	}
-	if strings.ContainsAny(trimmed, `/\\`) {
+	if strings.ContainsAny(trimmed, `/\\`) && !isZhiYuanMemoryNamespace(trimmed) {
 		return "", invalidProjectName(name, "project must be a name, not a path")
 	}
 	for _, r := range trimmed {
