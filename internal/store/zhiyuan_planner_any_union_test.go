@@ -9,7 +9,6 @@ import "testing"
 
 func TestPlannerAnyMixedUnionRecall(t *testing.T) {
 	s := newTestStore(t)
-	defer s.Close()
 
 	if err := s.CreateSession("u1", "proj", "dir"); err != nil {
 		t.Fatal(err)

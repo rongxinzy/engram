@@ -42,7 +42,6 @@ var goldenDataset = []goldenDoc{
 // TestGoldenDatasetCJKRecall 运行黄金数据集检索，统计 Recall@8。
 func TestGoldenDatasetCJKRecall(t *testing.T) {
 	s := newTestStore(t)
-	defer s.Close()
 
 	if err := s.CreateSession("golden", "proj", "dir"); err != nil {
 		t.Fatal(err)
@@ -102,7 +101,6 @@ func TestGoldenDatasetCJKRecall(t *testing.T) {
 // TestGoldenDatasetNoLeakage 验证跨项目隔离与已删除记录零泄漏。
 func TestGoldenDatasetNoLeakage(t *testing.T) {
 	s := newTestStore(t)
-	defer s.Close()
 
 	if err := s.CreateSession("g1", "proj-a", "dir"); err != nil {
 		t.Fatal(err)
@@ -172,7 +170,6 @@ func TestGoldenDatasetNoLeakage(t *testing.T) {
 // TestGoldenDatasetShortAndMixedQueries 验证短词与混合查询命中率。
 func TestGoldenDatasetShortAndMixedQueries(t *testing.T) {
 	s := newTestStore(t)
-	defer s.Close()
 
 	if err := s.CreateSession("g3", "proj", "dir"); err != nil {
 		t.Fatal(err)
@@ -230,7 +227,6 @@ func TestGoldenDatasetLatency(t *testing.T) {
 	}
 
 	s := newTestStore(t)
-	defer s.Close()
 
 	if err := s.CreateSession("perf", "proj", "dir"); err != nil {
 		t.Fatal(err)

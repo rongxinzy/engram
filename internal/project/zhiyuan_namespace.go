@@ -13,7 +13,9 @@ func isZhiYuanMemoryNamespace(name string) bool {
 		return false
 	}
 	for _, ch := range id {
-		if !(ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9' || ch == '-' || ch == '_') {
+		letter := ch >= 'a' && ch <= 'z'
+		digit := ch >= '0' && ch <= '9'
+		if !letter && !digit && ch != '-' && ch != '_' {
 			return false
 		}
 	}

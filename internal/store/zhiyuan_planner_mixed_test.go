@@ -8,7 +8,6 @@ import "testing"
 
 func TestPlannerMixedQueryRecall(t *testing.T) {
 	s := newTestStore(t)
-	defer s.Close()
 
 	for _, sid := range []string{"s1", "s2", "s3", "s4"} {
 		if err := s.CreateSession(sid, "proj", "dir"); err != nil {
@@ -77,7 +76,6 @@ func TestPlannerMixedQueryRecall(t *testing.T) {
 // 混合查询中短词的 LIKE 转义：字面 % 不应被当作通配符。
 func TestPlannerMixedQueryLiteralPercent(t *testing.T) {
 	s := newTestStore(t)
-	defer s.Close()
 
 	if err := s.CreateSession("p1", "proj", "dir"); err != nil {
 		t.Fatal(err)
@@ -121,7 +119,6 @@ func TestPlannerMixedQueryLiteralPercent(t *testing.T) {
 // 混合查询（FTS + 短词 LIKE）必须排除软删除记录。
 func TestPlannerMixedQueryExcludesSoftDeleted(t *testing.T) {
 	s := newTestStore(t)
-	defer s.Close()
 
 	if err := s.CreateSession("p2", "proj", "dir"); err != nil {
 		t.Fatal(err)
