@@ -36,6 +36,13 @@ func TestPiSourceEvidence(t *testing.T) {
 		return git("rev-parse", "HEAD")
 	}
 	git("init", "--quiet")
+	// Finish fixture maintenance before taking complete byte snapshots.
+	git("config", "maintenance.auto", "true")
+	git("config", "maintenance.autoDetach", "false")
+	git("config", "gc.autoDetach", "false")
+	// Force the maintenance boundary even for this small synthetic history.
+	git("config", "maintenance.commit-graph.enabled", "true")
+	git("config", "maintenance.commit-graph.auto", "1")
 	git("config", "user.name", "Pi Fixture")
 	git("config", "user.email", "fixture@example.invalid")
 	git("config", "commit.gpgsign", "false")
