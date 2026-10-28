@@ -13765,15 +13765,35 @@ type PassiveCaptureResult struct {
 	Duplicates int `json:"duplicates"` // Skipped because already existed
 }
 
-// learningHeaderPattern matches section headers for learnings in both English and Spanish.
+// learningHeaderPattern matches section headers for learnings in English, Spanish and Chinese.
 var learningHeaderPattern = regexp.MustCompile(
-	`(?im)^#{2,3}\s+(?:Aprendizajes(?:\s+Clave)?|Key\s+Learnings?|Learnings?):?\s*$`,
+	`(?im)^#{2,3}\s+(?:Aprendizajes(?:\s+Clave)?|Key\s+Learnings?|Learnings?|关键收获|要点|学习要点|收获|经验总结|学习心得|重要发现|关键发现)[:：]?\s*$`,
 )
 
 const (
 	minLearningLength = 20
 	minLearningWords  = 4
 )
+
+// hasHan reports whether text contains CJK (Han) characters. Chinese items have
+// no space-separated words, so the >=4-words rule cannot apply to them.
+func hasHan(text string) bool {
+	for _, r := range text {
+		if r >= 0x4e00 && r <= 0x9fff {
+			return true
+		}
+	}
+	return false
+}
+
+// passesLearningGuards keeps the English >=4-words rule but only applies the
+// byte-length rule to CJK items (which have no space-separated words).
+func passesLearningGuards(cleaned string) bool {
+	if hasHan(cleaned) {
+		return len([]rune(cleaned)) >= minLearningLength
+	}
+	return len(cleaned) >= minLearningLength && len(strings.Fields(cleaned)) >= minLearningWords
+}
 
 // ExtractLearnings parses structured learning items from text.
 // It looks for sections like "## Key Learnings:" or "## Aprendizajes Clave:"
@@ -13802,7 +13822,7 @@ func ExtractLearnings(text string) []string {
 		if len(numbered) > 0 {
 			for _, m := range numbered {
 				cleaned := cleanMarkdown(m[1])
-				if len(cleaned) >= minLearningLength && len(strings.Fields(cleaned)) >= minLearningWords {
+				if passesLearningGuards(cleaned) {
 					learnings = append(learnings, cleaned)
 				}
 			}
@@ -13813,7 +13833,7 @@ func ExtractLearnings(text string) []string {
 			bullets := regexp.MustCompile(`(?m)^\s*[-*]\s+(.+)`).FindAllStringSubmatch(sectionText, -1)
 			for _, m := range bullets {
 				cleaned := cleanMarkdown(m[1])
-				if len(cleaned) >= minLearningLength && len(strings.Fields(cleaned)) >= minLearningWords {
+				if passesLearningGuards(cleaned) {
 					learnings = append(learnings, cleaned)
 				}
 			}
