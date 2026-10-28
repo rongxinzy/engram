@@ -4352,6 +4352,42 @@ func TestExtractLearningsIgnoresShortItems(t *testing.T) {
 	}
 }
 
+func TestExtractLearningsCJKHeader(t *testing.T) {
+	text := `## 关键收获：
+
+1. rehype-sanitize 按协议白名单剥离绝对路径链接的 href 属性
+2. 流式输出改为增量事件驱动，减少全文快照带来的写放大
+`
+	learnings := ExtractLearnings(text)
+	if len(learnings) != 2 {
+		t.Fatalf("expected 2 CJK learnings, got %d: %v", len(learnings), learnings)
+	}
+}
+
+func TestExtractLearningsCJKFullwidthColon(t *testing.T) {
+	text := `## 关键收获：
+
+- 会话摘要应使用 agent 自写检查点，而不是主进程窗口抽取
+- 工具调用占满窗口时 hasConversationPair 会丢摘要
+`
+	learnings := ExtractLearnings(text)
+	if len(learnings) != 2 {
+		t.Fatalf("expected 2 CJK learnings with fullwidth colon, got %d: %v", len(learnings), learnings)
+	}
+}
+
+func TestExtractLearningsCJKWordGuard(t *testing.T) {
+	text := `## 关键收获：
+
+1. 太短
+2. rehype-sanitize 按协议白名单剥离绝对路径链接的 href 属性
+`
+	learnings := ExtractLearnings(text)
+	if len(learnings) != 1 {
+		t.Fatalf("expected only the long CJK item, got %d: %v", len(learnings), learnings)
+	}
+}
+
 func TestExtractLearningsNoSection(t *testing.T) {
 	text := `This is just regular text without any learning section headers.
 It has multiple lines but no ## Key Learnings or similar.
